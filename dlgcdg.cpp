@@ -20,26 +20,24 @@
 
 #include "dlgcdg.h"
 #include "ui_dlgcdg.h"
+#include "arguments.h"
 #include <QDebug>
 #include <QApplication>
 #include <QDesktopWidget>
-// #include <QSvgRenderer>
 #include <QPainter>
 #include <QDir>
 #include <QImageReader>
 
+extern Arguments *arguments;
+
 DlgCdg::DlgCdg(QWidget *parent, Qt::WindowFlags f) :
     QDialog(parent, f),
     ui(new Ui::DlgCdg)
-{
-    if (settings->cdgWindowFullScreenMonitor() > QApplication::desktop()->numScreens())
-    {
-        settings->setCdgWindowFullscreen(false);
-    }
-    hSizeAdjustment = settings->cdgHSizeAdjustment();
-    vSizeAdjustment = settings->cdgVSizeAdjustment();
-    hOffset = settings->cdgHOffset();
-    vOffset = settings->cdgVOffset();
+{  
+    hSizeAdjustment = 0;
+    vSizeAdjustment = 0;
+    hOffset = 0;
+    vOffset = 0;
     ui->setupUi(this);
     m_fullScreen = false;
     m_lastSize.setWidth(300);
@@ -49,20 +47,19 @@ DlgCdg::DlgCdg(QWidget *parent, Qt::WindowFlags f) :
     fullScreenTimer->setInterval(500);
 
     cdg = new CDG;
-    cdg->FileOpen("/home/christoph/kar.cdg");
+    cdg->FileOpen(arguments->getCDG().toStdString());
     cdg->Process();
     ui->cdgVideo->videoSurface()->start();
 
     mediaPlayer = new QMediaPlayer;
-    mediaPlayer->setMedia(QUrl::fromLocalFile("/home/christoph/kar.mp3"));
+    mediaPlayer->setMedia(QUrl::fromLocalFile(arguments->getMp3()));
     mediaPlayer->setNotifyInterval(50);
     mediaPlayer->setVolume(100);
 
     connect(mediaPlayer, SIGNAL(positionChanged(qint64)), this, SLOT(audioBackend_positionChanged(qint64)));
-    if ((settings->cdgWindowFullscreen()) && (settings->showCdgWindow()))
-    {
-        makeFullscreen();
-    }
+
+    makeFullscreen();
+
     mediaPlayer->play();
     show();
 
@@ -77,10 +74,6 @@ void DlgCdg::updateCDG(QImage image, bool overrideVisibleCheck)
 {
     if ((isVisible()) || (overrideVisibleCheck))
     {
-     //   if (image.size().height() > ui->cdgVideo->size().height() || image.size().width() > ui->cdgVideo->size().width())
-     //       ui->cdgVideo->videoSurface()->present(QVideoFrame(image));
-     //       ui->cdgVideo->videoSurface()->present(QVideoFrame(image.scaled(ui->cdgVideo->size(), Qt::IgnoreAspectRatio)));
-     //   else
             ui->cdgVideo->videoSurface()->present(QVideoFrame(image));
     }
 }
@@ -94,7 +87,7 @@ void DlgCdg::makeFullscreen()
     flags |= Qt::Window;
     flags |= Qt::FramelessWindowHint;
     setWindowFlags(flags);
-    QRect screenDimensions = QApplication::desktop()->screenGeometry(settings->cdgWindowFullScreenMonitor());
+    QRect screenDimensions = QApplication::desktop()->screenGeometry(arguments->getMonitor());
     move(screenDimensions.left()  + hOffset, screenDimensions.top() + vOffset);
     resize(screenDimensions.width() + hSizeAdjustment,screenDimensions.height() + vSizeAdjustment);
     show();
@@ -105,8 +98,7 @@ void DlgCdg::makeWindowed()
 {
     setWindowFlags(Qt::Window);
     resize(300, 216);
-    if (settings->showCdgWindow())
-        show();
+    show();
     ui->cdgVideo->repaint();
     m_fullScreen = false;
 }
@@ -121,12 +113,9 @@ void DlgCdg::setFullScreen(bool fullscreen)
 
 void DlgCdg::setFullScreenMonitor(int monitor)
 {
-    Q_UNUSED(monitor);
-    if (settings->cdgWindowFullscreen())
-    {
-        makeWindowed();
-        makeFullscreen();
-    }
+    Q_UNUSED(monitor);    
+    makeWindowed();
+    makeFullscreen();
 }
 
 void DlgCdg::setVOffset(int pixels)
@@ -134,7 +123,7 @@ void DlgCdg::setVOffset(int pixels)
     vOffset = pixels;
     if (m_fullScreen)
     {
-        QRect screenDimensions = QApplication::desktop()->screenGeometry(settings->cdgWindowFullScreenMonitor());
+        QRect screenDimensions = QApplication::desktop()->screenGeometry(arguments->getMonitor());
         move(screenDimensions.left()  + hOffset, screenDimensions.top() + vOffset);
     }
 }
@@ -144,7 +133,7 @@ void DlgCdg::setHOffset(int pixels)
     hOffset = pixels;
     if (m_fullScreen)
     {
-        QRect screenDimensions = QApplication::desktop()->screenGeometry(settings->cdgWindowFullScreenMonitor());
+        QRect screenDimensions = QApplication::desktop()->screenGeometry(arguments->getMonitor());
         move(screenDimensions.left()  + hOffset, screenDimensions.top() + vOffset);
     }
 }
@@ -154,7 +143,7 @@ void DlgCdg::setVSizeAdjustment(int pixels)
     vSizeAdjustment = pixels;
     if (m_fullScreen)
     {
-        QRect screenDimensions = QApplication::desktop()->screenGeometry(settings->cdgWindowFullScreenMonitor());
+        QRect screenDimensions = QApplication::desktop()->screenGeometry(arguments->getMonitor());
         resize(screenDimensions.width() + hSizeAdjustment,screenDimensions.height() + vSizeAdjustment);
     }
 }
@@ -164,7 +153,7 @@ void DlgCdg::setHSizeAdjustment(int pixels)
     hSizeAdjustment = pixels;
     if (m_fullScreen)
     {
-        QRect screenDimensions = QApplication::desktop()->screenGeometry(settings->cdgWindowFullScreenMonitor());
+        QRect screenDimensions = QApplication::desktop()->screenGeometry(arguments->getMonitor());
         resize(screenDimensions.width() + hSizeAdjustment,screenDimensions.height() + vSizeAdjustment);
     }
 }
@@ -191,13 +180,10 @@ void DlgCdg::fullScreenTimerTimeout()
 {
     // This is to work around Windows 10 opening the window offset from the top left corner unless we wait a bit
     // before moving it.
-    if ((settings->showCdgWindow()) && (settings->cdgWindowFullscreen()))
-    {
-        setVOffset(settings->cdgVOffset());
-        setHOffset(settings->cdgHOffset());
-        ui->cdgVideo->repaint();
-        fullScreenTimer->stop();
-    }
+    setVOffset(0);
+    setHOffset(0);
+    ui->cdgVideo->repaint();
+    fullScreenTimer->stop();
 }
 void DlgCdg::audioBackend_positionChanged(qint64 position)
 {

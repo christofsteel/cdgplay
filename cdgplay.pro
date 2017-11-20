@@ -37,7 +37,8 @@ SOURCES += \
         dlgcdg.cpp \
         libCDG/src/libCDG_Frame_Image.cpp \
         libCDG/src/libCDG_Color.cpp \
-        libCDG/src/libCDG.cpp
+        libCDG/src/libCDG.cpp \
+    arguments.cpp
 
 
 HEADERS += \
@@ -47,7 +48,8 @@ HEADERS += \
         dlgcdg.h \
         libCDG/include/libCDG.h \
         libCDG/include/libCDG_Frame_Image.h \
-        libCDG/include/libCDG_Color.h
+        libCDG/include/libCDG_Color.h \
+    arguments.h
 
 FORMS += \
         dlgcdg.ui
