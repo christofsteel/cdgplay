@@ -8,8 +8,6 @@ QT       += core gui multimedia
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-unix: DEFINES += USE_GL
-
 contains(DEFINES, USE_GL) {
     QT += opengl
 }
