@@ -17,7 +17,7 @@ contains(DEFINES, USE_GL) {
 TARGET = cdgplay
 TEMPLATE = app
 
-target.path = /usr/bin/
+target.path = $$(PREFIX)/bin/
 
 INSTALLS += target
 
