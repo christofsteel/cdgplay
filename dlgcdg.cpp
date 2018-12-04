@@ -34,6 +34,7 @@ DlgCdg::DlgCdg(QWidget *parent, Qt::WindowFlags f) :
     QDialog(parent, f),
     ui(new Ui::DlgCdg)
 {  
+    this->parent = parent;
     hSizeAdjustment = 0;
     vSizeAdjustment = 0;
     hOffset = 0;
@@ -57,12 +58,21 @@ DlgCdg::DlgCdg(QWidget *parent, Qt::WindowFlags f) :
     mediaPlayer->setVolume(100);
 
     connect(mediaPlayer, SIGNAL(positionChanged(qint64)), this, SLOT(audioBackend_positionChanged(qint64)));
+    connect(mediaPlayer, SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)), this, SLOT(audioBackend_mediaStatusChanged(QMediaPlayer::MediaStatus)));
 
     makeFullscreen();
 
     mediaPlayer->play();
     show();
 
+}
+
+void DlgCdg::audioBackend_mediaStatusChanged(QMediaPlayer::MediaStatus status)
+{
+    if(status == QMediaPlayer::EndOfMedia)
+    {
+        QApplication::quit();
+    }
 }
 
 DlgCdg::~DlgCdg()
@@ -185,8 +195,9 @@ void DlgCdg::fullScreenTimerTimeout()
     ui->cdgVideo->repaint();
     fullScreenTimer->stop();
 }
+
 void DlgCdg::audioBackend_positionChanged(qint64 position)
-{
+{    
         if (cdg->IsOpen() && cdg->GetLastCDGUpdate() >= position)
         {
             if (!cdg->SkipFrame(position))
@@ -198,6 +209,6 @@ void DlgCdg::audioBackend_positionChanged(qint64 position)
                 this->updateCDG(img);
                 free(rgbdata);
             }
-        }
+        }   
 }
 

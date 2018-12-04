@@ -41,6 +41,7 @@ class DlgCdg : public QDialog
 private:
     Ui::DlgCdg *ui;
     bool m_fullScreen;
+    QWidget* parent;
     QRect m_lastSize;
     int vOffset;
     int hOffset;
@@ -70,7 +71,7 @@ protected:
 private slots:
     void fullScreenTimerTimeout();
 
-public slots:
+public slots:    
     void setFullScreen(bool fullscreen);
     void setFullScreenMonitor(int monitor);
     void setVOffset(int pixels);
@@ -79,6 +80,7 @@ public slots:
     void setHSizeAdjustment(int pixels);
     void cdgSurfaceResized(QSize size);
     void audioBackend_positionChanged(qint64 position);
+    void audioBackend_mediaStatusChanged(QMediaPlayer::MediaStatus status);
 };
 
 #endif // CDGWINDOW_H
