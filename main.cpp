@@ -1,6 +1,5 @@
 #include "dlgcdg.h"
 #include "arguments.h"
-#include "libCDG/include/libCDG.h"
 #include <QApplication>
 #include <QFileInfo>
 #include <QCommandLineParser>
