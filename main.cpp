@@ -1,10 +1,19 @@
 #include <SDL.h>
 #include <SDL_mixer.h>
 #include <iostream>
+#include <string>
 
 #include "libCDG/include/libCDG.h"
 
-int main() {
+int main(int argc, char ** argv) {
+    if (argc == 1) {
+        exit(1);
+    }
+  std::string cdgfilename(argv[1]);
+  std::string mp3filename(cdgfilename);
+  uint64_t fnl = mp3filename.size();
+  mp3filename.resize(fnl - 3, '.');
+  mp3filename.append("mp3");
   SDL_Window *window = nullptr;
   SDL_Surface *screenSurface = nullptr; // Initialize SDL
 
@@ -34,13 +43,16 @@ int main() {
       renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, 300, 216);
 
   Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 512);
-  Mix_Music *music = Mix_LoadMUS("/home/christoph/cdgtest.mp3");
+  Mix_Music *music = Mix_LoadMUS(mp3filename.c_str());
   Mix_PlayMusic(music, 1);
   uint32_t starttime = SDL_GetTicks();
   CDG cdgfile;
-  cdgfile.FileOpen("/home/christoph/cdgtest.cdg");
+  cdgfile.FileOpen(cdgfilename.c_str());
   cdgfile.Process();
   unsigned char *pixmap;
+  cdgfile.SkipFrame(static_cast<int>(0));
+  pixmap = cdgfile.GetImageByTime(0);
+  int pitch = 900;
   screenSurface = SDL_GetWindowSurface(window);
 
   SDL_Event e;
@@ -57,12 +69,15 @@ int main() {
 
     uint32_t position = SDL_GetTicks() - starttime;
     cdgfile.SkipFrame(static_cast<int>(position));
-    pixmap = cdgfile.GetImageByTime(position);
-    SDL_UpdateTexture(texture, nullptr, pixmap, 900);
+    SDL_LockTexture(texture, nullptr, (void**) &pixmap, &pitch);
+    uint8_t* pixmap2 = cdgfile.GetImageByTime(position);
+    memcpy(pixmap, pixmap2, 900 * 216);
+    SDL_UnlockTexture(texture);
+    //SDL_UpdateTexture(texture, nullptr, pixmap, 900);
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, nullptr, nullptr);
     SDL_RenderPresent(renderer);
-    delete (pixmap);
+    delete (pixmap2);
     SDL_Delay(1);
   }
       SDL_DestroyWindow(window);
