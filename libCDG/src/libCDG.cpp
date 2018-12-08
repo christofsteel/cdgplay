@@ -19,7 +19,6 @@
 */
 
 #include "../include/libCDG.h"
-#include <QDebug>
 
 #define UNUSED(x) (void)x
 
@@ -123,8 +122,6 @@ bool CDG::Process(bool clear)
         lastupdate = 0;
         frame = 0;
     }
-    if (mode == MODE_FILE)
-    {
         while (CDGFileOpened)
         {
             if (!feof(CDGFile))
@@ -176,59 +173,6 @@ bool CDG::Process(bool clear)
                 return true;
             }
         }
-    }
-    if (mode == MODE_QIODEVICE)
-    {
-        QBuffer *ioDevice = new QBuffer(&cdgData);
-        ioDevice->open(QIODevice::ReadOnly);
-        while ((!ioDevice->atEnd()) && (ioDevice->isReadable()) && (ioDevice->size() > 0))
-        {
-            if (ioDevice->read((char *)&SubCode, sizeof(SubCode)) > 0)
-            {
-                CDG_Read_SubCode_Packet(SubCode);
-                CurPos++;
-                if (((GetPosMS() % 40) == 0) && (GetPosMS() >= 40))
-                {
-                    CDG_Frame_Image *img;;
-                    if (needupdate)
-                    {
-                        LastCDGCommandMS = frame * 40;
-                        lastupdate = frame;
-                        needupdate = false;
-                        img = new CDG_Frame_Image();
-                        for (unsigned int i=0; i < ChangedRows.size(); i++)
-                        {
-                            img->ChangedRowAdd(ChangedRows.at(i));
-                        }
-                        img->NeedFullUpdate = NeedFullUpdate;
-                        NeedFullUpdate = false;
-                        ChangedRows.clear();
-                        memcpy(&img->colors, &colors,sizeof(img->colors));
-                        memcpy(&img->CDG_Map, &CDGImage->CDG_Map, sizeof(img->CDG_Map));
-                        SkipFrames.push_back(false);
-                    }
-                    else
-                    {
-                        img = CDGVideo.at(lastupdate);
-                        SkipFrames.push_back(true);
-                    }
-                    CDGVideo.push_back(img);
-                    frame++;
-                }
-            }
-            else
-            {
-                ioDevice->close();
-                delete ioDevice;
-                Open = true;
-                return true;
-            }
-        }
-        ioDevice->close();
-        delete ioDevice;
-        Open = true;
-        return true;
-    }
     return false;
 }
 

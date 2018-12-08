@@ -29,8 +29,6 @@
 #include <stdlib.h>
 #include "libCDG_Frame_Image.h"
 #include "libCDG_Color.h"
-#include <QByteArray>
-#include <QBuffer>
 
 #define SC_MASK           0x3F
 #define SC_CDG_COMMAND    0x09
@@ -205,8 +203,7 @@ private:
 	unsigned int LastCDGCommandMS;
     bool Open;
 	bool CDGFileOpened;
-	FILE *CDGFile;
-    QByteArray cdgData;
+	FILE *CDGFile;    
 	unsigned int CurPos;
     CDG_Frame_Image *CDGImage;
 	char masks[6];

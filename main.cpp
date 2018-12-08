@@ -1,45 +1,72 @@
-#include "dlgcdg.h"
-#include "arguments.h"
-#include <QApplication>
-#include <QFileInfo>
-#include <QCommandLineParser>
-#include "settings.h"
-#include <QTextStream>
+#include <SDL.h>
+#include <SDL_mixer.h>
+#include <iostream>
 
-Arguments *arguments;
+#include "libCDG/include/libCDG.h"
 
+int main() {
+  SDL_Window *window = nullptr;
+  SDL_Surface *screenSurface = nullptr; // Initialize SDL
 
-int main(int argc, char *argv[])
-{
-  QApplication a(argc, argv);
-  QApplication::setApplicationName("cdgplay");
-  QApplication::setApplicationVersion("1.0");
+  const int SCREEN_WIDTH = 300;
+  const int SCREEN_HEIGHT = 216;
 
-  arguments = new Arguments;
+  int result = 0;
 
-  QCommandLineParser parser;
-  parser.setApplicationDescription("simply plays cdg files");
-  parser.addHelpOption();
-  parser.addVersionOption();  
-  QCommandLineOption monitorOption({{"m", "monitor"}, "Set Monitor output", "MONITOR"});
-  parser.addOption(monitorOption);
-  parser.addPositionalArgument("cdg_file", "CDG_File to play");
-  parser.process(a);
-
-  if(parser.isSet(monitorOption)) {
-      std::cout << (parser.value(monitorOption).toStdString()) << std::endl;
-      arguments->monitor = parser.value(monitorOption).toInt();
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
+    printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+  } else {
+    uint32_t window_flags = SDL_WINDOW_FULLSCREEN_DESKTOP; //SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
+    window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED,
+                              SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH,
+                              SCREEN_HEIGHT, window_flags);
+  }
+  int flags = MIX_INIT_MP3;
+  Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 512);
+  if (flags != (result = Mix_Init(flags))) {
+    printf("Could not initialize mixer (result: %d).\n", result);
+    printf("Mix_Init: %s\n", Mix_GetError());
+    exit(1);
   }
 
-  if(parser.positionalArguments().length() < 1) {
-      //qFatal("CDG file is missing");
-      exit(-1);
+  SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 0);
+  SDL_Texture *texture = SDL_CreateTexture(
+      renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, 300, 216);
+
+  Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 512);
+  Mix_Music *music = Mix_LoadMUS("/home/christoph/cdgtest.mp3");
+  Mix_PlayMusic(music, 1);
+  uint32_t starttime = SDL_GetTicks();
+  CDG cdgfile;
+  cdgfile.FileOpen("/home/christoph/cdgtest.cdg");
+  cdgfile.Process();
+  unsigned char *pixmap;
+  screenSurface = SDL_GetWindowSurface(window);
+
+  SDL_Event e;
+  bool quit = false;
+  while(!quit) {
+      while( SDL_PollEvent( &e ) != 0 )
+                  {
+                      //User requests quit
+                      if( e.type == SDL_QUIT )
+                      {
+                          quit = true;
+                      }
+                  }
+
+    uint32_t position = SDL_GetTicks() - starttime;
+    cdgfile.SkipFrame(static_cast<int>(position));
+    pixmap = cdgfile.GetImageByTime(position);
+    SDL_UpdateTexture(texture, nullptr, pixmap, 900);
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, texture, nullptr, nullptr);
+    SDL_RenderPresent(renderer);
+    delete (pixmap);
+    SDL_Delay(1);
   }
-  arguments->cdg_file = parser.positionalArguments().at(0);
+      SDL_DestroyWindow(window);
+      SDL_Quit();
+      return 0;
 
-  DlgCdg w;
-
-  w.show();
-
-  return a.exec();
 }
