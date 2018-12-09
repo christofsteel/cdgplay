@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
                             SCREEN_HEIGHT, window_flags);
   //SDL_GLContext glcontext = SDL_GL_CreateContext(window);
   int flags = MIX_INIT_MP3;
-  Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 512);
+  Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 2048);
   if (flags != (result = Mix_Init(flags))) {
     printf("Could not initialize mixer (result: %d).\n", result);
     printf("Mix_Init: %s\n", Mix_GetError());
