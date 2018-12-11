@@ -5,6 +5,10 @@
 
 #include "libCDG/include/libCDG.h"
 
+void end_function() {
+    exit(0);
+}
+
 int main(int argc, char ** argv) {
     if (argc == 1) {
         exit(1);
@@ -42,7 +46,7 @@ int main(int argc, char ** argv) {
   SDL_Texture *texture = SDL_CreateTexture(
       renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, 300, 216);
 
-  Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 512);
+  Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 2048);
   Mix_Music *music = Mix_LoadMUS(mp3filename.c_str());
   Mix_PlayMusic(music, 1);
   uint32_t starttime = SDL_GetTicks();
@@ -54,6 +58,7 @@ int main(int argc, char ** argv) {
   pixmap = cdgfile.GetImageByTime(0);
   int pitch = 900;
   screenSurface = SDL_GetWindowSurface(window);
+  Mix_HookMusicFinished(end_function);
 
   SDL_Event e;
   bool quit = false;
@@ -73,7 +78,6 @@ int main(int argc, char ** argv) {
     uint8_t* pixmap2 = cdgfile.GetImageByTime(position);
     memcpy(pixmap, pixmap2, 900 * 216);
     SDL_UnlockTexture(texture);
-    //SDL_UpdateTexture(texture, nullptr, pixmap, 900);
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, nullptr, nullptr);
     SDL_RenderPresent(renderer);
