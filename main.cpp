@@ -14,7 +14,11 @@ int main(int argc, char ** argv) {
         exit(1);
     }
     std::string cdgfilename(argv[1]);
-    uint monitor = stol(argv[2]);
+
+    uint monitor = 0;
+    if(argc >= 3) {
+        monitor = stol(argv[2]);
+    }
 
     std::string mp3filename(cdgfilename);
     uint64_t fnl = mp3filename.size();
@@ -32,7 +36,7 @@ int main(int argc, char ** argv) {
         printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
     } else {
         uint32_t window_flags = SDL_WINDOW_FULLSCREEN_DESKTOP; //SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
-         
+        SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
         window = SDL_CreateWindow("cdgplay", 
                 SDL_WINDOWPOS_UNDEFINED_DISPLAY(monitor),
                                   SDL_WINDOWPOS_UNDEFINED_DISPLAY(monitor), 
